@@ -630,31 +630,34 @@ function DualButtonPuzzle({ onSolved }) {
 
 // ==================== CH3: 기다리기 퍼즐 ====================
 function WaitPuzzle({ waitTime, onSolved }) {
-  const [timer, setTimer] = useState(0);
   const [clicked, setClicked] = useState(false);
+  const onSolvedRef = useRef(onSolved);
   const clickedRef = useRef(false);
+  const solvedRef = useRef(false);
+
+  useEffect(() => { onSolvedRef.current = onSolved; }, [onSolved]);
+  useEffect(() => { clickedRef.current = clicked; }, [clicked]);
 
   useEffect(() => {
-    clickedRef.current = clicked;
-  }, [clicked]);
-
-  useEffect(() => {
+    let count = 0;
     const interval = setInterval(() => {
-      setTimer(prev => {
-        if (prev >= waitTime && !clickedRef.current) {
-          clearInterval(interval);
-          setTimeout(() => onSolved(), 500);
-        }
-        return prev + 1;
-      });
+      count += 1;
+      if (count >= waitTime && !clickedRef.current && !solvedRef.current) {
+        solvedRef.current = true;
+        clearInterval(interval);
+        setTimeout(() => onSolvedRef.current(), 500);
+      }
     }, 1000);
     return () => clearInterval(interval);
-  }, [waitTime, onSolved, clicked]);
+  }, [waitTime]);
 
   const handleChoice = () => {
     setClicked(true);
-    setTimer(0);
-    setTimeout(() => setClicked(false), 2000);
+    clickedRef.current = true;
+    setTimeout(() => {
+      setClicked(false);
+      clickedRef.current = false;
+    }, 2000);
   };
 
   const choices = [
@@ -664,19 +667,21 @@ function WaitPuzzle({ waitTime, onSolved }) {
   ];
 
   return (
-    <div className="text-center py-8">
-      <div className="flex flex-col gap-4 max-w-md mx-auto">
+    <div className="text-center py-4 sm:py-8 w-full">
+      <p className="text-lg sm:text-xl text-neutral-100 font-medium mb-2">"지쳐요...."</p>
+      <p className="text-sm text-neutral-400 mb-6">(다음의 말에 대한 답으로 가장 부담되지 않는 것은?)</p>
+      <div className="flex flex-col gap-3 max-w-md mx-auto px-2">
         {choices.map(choice => (
           <button
             key={choice.key}
             onClick={handleChoice}
-            className="px-8 py-4 text-lg bg-neutral-700 hover:bg-neutral-600 rounded-lg text-neutral-100 transition-colors"
+            className="px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg bg-neutral-700 hover:bg-neutral-600 rounded-lg text-neutral-100 transition-colors"
           >
             {choice.text}
           </button>
         ))}
       </div>
-      {clicked && <p className="text-red-400 mt-6 text-lg">다시 생각해보세요...</p>}
+      {clicked && <p className="text-red-400 mt-6 text-base sm:text-lg">다시 생각해보세요...</p>}
     </div>
   );
 }
@@ -702,7 +707,7 @@ const GAME_DATA = {
       { text: '이런 친절은 늘 의심부터 들었다.\n보험 같은 거 권하려는 건가, 뭘 기대하는 건가, 왜 이렇게 쉽게 말을 거는 건가.\n\n그런데 그 사람은 딱 그 말만 하고, 내 대답을 기다렸다.\n재촉도, 웃음도, 과장도 없이.\n\n나는 고개를 끄덕였고, 둘은 말 없이 걸었다.\n그는 내 속도를 맞췄다.\n비가 내리는 길에서, 누군가가 내 속도에 맞춘다는 사실이 이상하게 따뜻했다.\n\n헤어지기 직전, 그는 내게 명함을 내밀었다.\n"혹시 오늘 불편하셨다면 죄송해요. 그냥… 같은 방향이라서요."', buttons: [{ label: '다음', type: 'next' }] },
       { text: '명함이라니. 요란하지도 않고, 연락해달라고 부탁하지도 않고, 오히려 미안하다고 말하는 방식이 낯설었다.\n\n집에 와서도 한참 동안 명함을 들여다봤다.\n연락하지 않으려 했다.\n하지만 손끝이 먼저 움직였다.\n\n\'잘 들어가셨어요?\'라는 아주 짧은 메시지를 보냈다.\n\n그리고 그는 바로 답하지 않았다.\n그게 좋았다.\n그는 내 속도를 맞춰줄 줄 아는 사람이었다.', buttons: [{ label: 'Q', type: 'puzzle' }] }
     ],
-    puzzle: { type: 'video', video: 'https://www.youtube.com/embed/16E6kv-Qtv4?autoplay=1&loop=1&playlist=16E6kv-Qtv4&mute=1&playsinline=1&rel=0', answer: 'PACE', answer2: 'pace' },
+    puzzle: { type: 'video', videoId: '16E6kv-Qtv4', answer: 'PACE', answer2: 'pace' },
     hint: '나의 속도에 맞는 걸 찾아보자..',
     answerExplain: '정답: PACE\n해석: 나의 속도 즉 ME 라는 글자와 같은 속도로 움직이는 알파벳들을 찾아서 애너그램을 해보면 PACE 라는 글자를 찾게 됩니다!\n\n※ 정답은 영어 대문자 또는 소문자로 입력하세요: PACE 또는 pace'
   },
@@ -1109,18 +1114,28 @@ export default function LoveEscapeGame() {
         }
       };
 
+      const youtubeUrl = `https://www.youtube.com/watch?v=${puzzle.videoId}`;
+
       return (
         <div className="text-center py-4 sm:py-8 w-full">
-          <div className="w-full max-w-xl mx-auto mb-4 sm:mb-6 aspect-video bg-neutral-800 border-2 border-neutral-700 rounded-lg overflow-hidden">
+          <div className="w-full max-w-xl mx-auto mb-4 sm:mb-6 aspect-video bg-neutral-800 border-2 border-neutral-700 rounded-lg overflow-hidden relative"
+               style={{ paddingBottom: '56.25%', height: 0 }}>
             <iframe
-              src={puzzle.video}
-              className="w-full h-full"
+              src={`https://www.youtube.com/embed/${puzzle.videoId}?autoplay=1&loop=1&playlist=${puzzle.videoId}&mute=1&playsinline=1&rel=0&enablejsapi=1`}
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
-              playsInline
             />
           </div>
+          <a
+            href={youtubeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mb-4 text-sm text-neutral-400 underline hover:text-neutral-200"
+          >
+            영상이 재생되지 않으면 여기를 눌러주세요
+          </a>
           <div className="flex gap-2 items-center justify-center px-2">
             <input
               type="text"

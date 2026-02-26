@@ -702,7 +702,7 @@ const GAME_DATA = {
       { text: '이런 친절은 늘 의심부터 들었다.\n보험 같은 거 권하려는 건가, 뭘 기대하는 건가, 왜 이렇게 쉽게 말을 거는 건가.\n\n그런데 그 사람은 딱 그 말만 하고, 내 대답을 기다렸다.\n재촉도, 웃음도, 과장도 없이.\n\n나는 고개를 끄덕였고, 둘은 말 없이 걸었다.\n그는 내 속도를 맞췄다.\n비가 내리는 길에서, 누군가가 내 속도에 맞춘다는 사실이 이상하게 따뜻했다.\n\n헤어지기 직전, 그는 내게 명함을 내밀었다.\n"혹시 오늘 불편하셨다면 죄송해요. 그냥… 같은 방향이라서요."', buttons: [{ label: '다음', type: 'next' }] },
       { text: '명함이라니. 요란하지도 않고, 연락해달라고 부탁하지도 않고, 오히려 미안하다고 말하는 방식이 낯설었다.\n\n집에 와서도 한참 동안 명함을 들여다봤다.\n연락하지 않으려 했다.\n하지만 손끝이 먼저 움직였다.\n\n\'잘 들어가셨어요?\'라는 아주 짧은 메시지를 보냈다.\n\n그리고 그는 바로 답하지 않았다.\n그게 좋았다.\n그는 내 속도를 맞춰줄 줄 아는 사람이었다.', buttons: [{ label: 'Q', type: 'puzzle' }] }
     ],
-    puzzle: { type: 'video', video: 'https://www.youtube.com/embed/16E6kv-Qtv4?autoplay=1&loop=1&playlist=16E6kv-Qtv4&mute=1', answer: 'PACE', answer2: 'pace' },
+    puzzle: { type: 'video', video: 'https://www.youtube.com/embed/16E6kv-Qtv4?autoplay=1&loop=1&playlist=16E6kv-Qtv4&mute=1&playsinline=1&rel=0', answer: 'PACE', answer2: 'pace' },
     hint: '나의 속도에 맞는 걸 찾아보자..',
     answerExplain: '정답: PACE\n해석: 나의 속도 즉 ME 라는 글자와 같은 속도로 움직이는 알파벳들을 찾아서 애너그램을 해보면 PACE 라는 글자를 찾게 됩니다!\n\n※ 정답은 영어 대문자 또는 소문자로 입력하세요: PACE 또는 pace'
   },
@@ -1116,8 +1116,9 @@ export default function LoveEscapeGame() {
               src={puzzle.video}
               className="w-full h-full"
               frameBorder="0"
-              allow="autoplay; encrypted-media"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
+              playsInline
             />
           </div>
           <div className="flex gap-2 items-center justify-center px-2">

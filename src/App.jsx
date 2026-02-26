@@ -251,15 +251,16 @@ function PyramidCollapsePuzzle({ onAnswer }) {
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 p-4">
+    <div className="flex flex-col items-center gap-4 p-2 w-full max-w-lg mx-auto">
       <canvas
         ref={canvasRef}
         width={WIDTH}
         height={HEIGHT}
-        className="border-2 border-neutral-700 rounded-lg cursor-pointer"
+        className="border-2 border-neutral-700 rounded-lg cursor-pointer w-full h-auto"
+        style={{ maxWidth: WIDTH }}
       />
 
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-2 items-center w-full justify-center">
         <input
           type="text"
           value={answer}
@@ -985,7 +986,7 @@ export default function LoveEscapeGame() {
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="bg-neutral-900 border-2 border-neutral-700 rounded-xl p-6 max-w-4xl max-h-[90vh] overflow-y-auto"
+          className="bg-neutral-900 border-2 border-neutral-700 rounded-xl p-4 sm:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex justify-between items-center mb-4">
@@ -1109,8 +1110,8 @@ export default function LoveEscapeGame() {
       };
 
       return (
-        <div className="text-center py-8">
-          <div className="w-full max-w-xl mx-auto mb-6 aspect-video bg-neutral-800 border-2 border-neutral-700 rounded-lg overflow-hidden">
+        <div className="text-center py-4 sm:py-8 w-full">
+          <div className="w-full max-w-xl mx-auto mb-4 sm:mb-6 aspect-video bg-neutral-800 border-2 border-neutral-700 rounded-lg overflow-hidden">
             <iframe
               src={puzzle.video}
               className="w-full h-full"
@@ -1119,18 +1120,18 @@ export default function LoveEscapeGame() {
               allowFullScreen
             />
           </div>
-          <div className="flex gap-2 items-center justify-center">
+          <div className="flex gap-2 items-center justify-center px-2">
             <input
               type="text"
               value={tempInput}
               onChange={(e) => setTempInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleVideoSubmit()}
               placeholder="정답 입력"
-              className="px-4 py-2 bg-neutral-800 border border-neutral-600 rounded text-neutral-100 outline-none focus:border-neutral-500"
+              className="flex-1 min-w-0 px-3 py-2 bg-neutral-800 border border-neutral-600 rounded text-neutral-100 outline-none focus:border-neutral-500"
             />
             <button
               onClick={handleVideoSubmit}
-              className="px-6 py-2 bg-neutral-700 hover:bg-neutral-600 rounded text-neutral-100 font-medium"
+              className="px-4 sm:px-6 py-2 bg-neutral-700 hover:bg-neutral-600 rounded text-neutral-100 font-medium whitespace-nowrap"
             >
               Enter
             </button>
@@ -1153,24 +1154,24 @@ export default function LoveEscapeGame() {
     };
 
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-4 sm:py-8 w-full">
         {puzzle.image && (
-          <div className="w-80 h-80 mx-auto mb-6 bg-neutral-800 border-2 border-neutral-700 rounded-lg overflow-hidden">
+          <div className="w-full max-w-xs sm:max-w-sm mx-auto mb-4 sm:mb-6 aspect-square bg-neutral-800 border-2 border-neutral-700 rounded-lg overflow-hidden">
             <img src={puzzle.image} alt="Puzzle" className="w-full h-full object-contain" />
           </div>
         )}
-        <div className="flex gap-2 items-center justify-center">
+        <div className="flex gap-2 items-center justify-center px-2">
           <input
             type="text"
             value={tempInput}
             onChange={(e) => setTempInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleImageSubmit()}
             placeholder="정답 입력"
-            className="px-4 py-2 bg-neutral-800 border border-neutral-600 rounded text-neutral-100 outline-none focus:border-neutral-500"
+            className="flex-1 min-w-0 px-3 py-2 bg-neutral-800 border border-neutral-600 rounded text-neutral-100 outline-none focus:border-neutral-500"
           />
           <button
             onClick={handleImageSubmit}
-            className="px-6 py-2 bg-neutral-700 hover:bg-neutral-600 rounded text-neutral-100 font-medium"
+            className="px-4 sm:px-6 py-2 bg-neutral-700 hover:bg-neutral-600 rounded text-neutral-100 font-medium whitespace-nowrap"
           >
             Enter
           </button>

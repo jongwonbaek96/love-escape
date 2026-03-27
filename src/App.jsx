@@ -567,19 +567,19 @@ function BlockStackGame({ onSolved, onFail, debug = false }) {
   }, [gameState]);
 
   return (
-    <div className="flex flex-col items-center gap-4 p-4">
+    <div className="flex flex-col items-center gap-3 p-2 w-full max-w-lg mx-auto">
       <canvas
         ref={canvasRef}
         width={CANVAS_WIDTH}
         height={CANVAS_HEIGHT}
-        className="border-2 border-neutral-700 rounded-lg"
-        style={{ cursor: gameState === 'WAITING' ? 'pointer' : 'default' }}
+        className="border-2 border-neutral-700 rounded-lg w-full h-auto"
+        style={{ cursor: gameState === 'WAITING' ? 'pointer' : 'default', maxWidth: CANVAS_WIDTH }}
       />
-      <div className="text-center min-h-[60px]">
-        <div className={`text-lg font-bold mb-2 ${gameState === 'SUCCESS' ? 'text-green-500' : gameState === 'FAIL' ? 'text-red-500' : 'text-neutral-300'}`}>
+      <div className="text-center min-h-[50px]">
+        <div className={`text-base sm:text-lg font-bold mb-1 ${gameState === 'SUCCESS' ? 'text-green-500' : gameState === 'FAIL' ? 'text-red-500' : 'text-neutral-300'}`}>
           {message}
         </div>
-        <div className="text-sm text-neutral-400">
+        <div className="text-xs sm:text-sm text-neutral-400">
           드롭한 블록: {droppedCount} / 6
         </div>
       </div>
@@ -588,8 +588,8 @@ function BlockStackGame({ onSolved, onFail, debug = false }) {
           다시 시작
         </button>
       )}
-      <p className="text-xs text-neutral-500 text-center max-w-md">
-        ⚠️ 1번(노란색) 블록만 바닥에 닿을 수 있습니다. 2~6번 블록이 바닥에 닿으면 실패!
+      <p className="text-xs text-neutral-500 text-center max-w-md px-2">
+        1번(노란색) 블록만 바닥에 닿을 수 있습니다. 2~6번 블록이 바닥에 닿으면 실패!
       </p>
     </div>
   );
@@ -623,7 +623,7 @@ function DualButtonPuzzle({ onSolved }) {
           </button>
         ))}
       </div>
-      <p className="text-neutral-400 text-sm mt-4">하나를 골라보세요</p>
+      <p className="text-neutral-400 text-sm mt-4">둘 중 하나의 문만 고르시오</p>
     </div>
   );
 }
@@ -631,32 +631,37 @@ function DualButtonPuzzle({ onSolved }) {
 // ==================== CH3: 기다리기 퍼즐 ====================
 function WaitPuzzle({ waitTime, onSolved }) {
   const [clicked, setClicked] = useState(false);
-  const onSolvedRef = useRef(onSolved);
-  const clickedRef = useRef(false);
+  const [resetKey, setResetKey] = useState(0);
   const solvedRef = useRef(false);
+  const onSolvedRef = useRef(onSolved);
 
   useEffect(() => { onSolvedRef.current = onSolved; }, [onSolved]);
-  useEffect(() => { clickedRef.current = clicked; }, [clicked]);
 
   useEffect(() => {
+    solvedRef.current = false;
     let count = 0;
-    const interval = setInterval(() => {
-      count += 1;
-      if (count >= waitTime && !clickedRef.current && !solvedRef.current) {
-        solvedRef.current = true;
-        clearInterval(interval);
-        setTimeout(() => onSolvedRef.current(), 500);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [waitTime]);
+    let interval = null;
+    const delay = setTimeout(() => {
+      interval = setInterval(() => {
+        count += 1;
+        if (count >= waitTime && !solvedRef.current) {
+          solvedRef.current = true;
+          clearInterval(interval);
+          onSolvedRef.current();
+        }
+      }, 1000);
+    }, 500);
+    return () => {
+      clearTimeout(delay);
+      if (interval) clearInterval(interval);
+    };
+  }, [waitTime, resetKey]);
 
   const handleChoice = () => {
     setClicked(true);
-    clickedRef.current = true;
     setTimeout(() => {
       setClicked(false);
-      clickedRef.current = false;
+      setResetKey(k => k + 1);
     }, 2000);
   };
 
@@ -763,7 +768,7 @@ const GAME_DATA = {
     scenes: [
       { text: '문제는 정말… 사소한 날에 왔다.\n\n그날도 별일 없을 거라고 믿었다.\n우리는 저녁에 만나기로 했고\n나는 그를 기다렸다.\n평소보다 조금 더 신경을 써서 화장도 하고\n머리도 괜히 만지고, 옷도 여러 번 갈아입었다.\n\n사랑은 가끔\n\'내가 아직 기대하고 있다\'는 증거를 몸에 남긴다.', buttons: [{ label: '다음', type: 'next' }] },
       { text: '약속 시간 10분 전.\n나는 메시지를 보냈다.\n"어디야?"\n답이 없었다.\n\n5분이 지나고,\n10분이 지나고,\n나는 자꾸 핸드폰을 켰다.\n알림이 없는 화면이\n내 마음을 더 크게 만들었다.', buttons: [{ label: '다음', type: 'next' }] },
-      { image: '/사진8.png', text: '20분쯤 지났을 때\n그가 나타났다.\n\n그의 얼굴은 급한 얼굴이 아니었다.\n미안한 얼굴도 아니었다.\n그저 평소처럼,\n너무 평소처럼 걸어왔다.\n\n"미안, 늦었지."\n그는 그렇게 말했다.\n그리고 덧붙였다.\n"잠깐… 동료 만나서 얘기 좀 하느라."\n\n동료.\n얘기 좀.\n그 두 단어가 내 머리에서 서로 부딪혔다.\n\n나는 순간적으로 웃으려고 했다.\n별일 아니니까.\n사소하니까.\n사람은 그럴 수 있으니까.\n\n그런데 그가 이어서 말했다.\n"아, 근데 너 메시지 못 봤어. 폰 무음이었어."', buttons: [{ label: 'Q', type: 'puzzle' }] }
+      { image: '/사진8.png', text: '20분쯤 지났을 때 그가 나타났다.\n\n그의 얼굴은 급한 얼굴이 아니었다.\n미안한 얼굴도 아니었다.\n그저 평소처럼, 너무 평소처럼 걸어왔다.\n\n"미안, 늦었지."\n그는 그렇게 말했다.\n그리고 덧붙였다.\n\n"잠깐… 동료 만나서 얘기 좀 하느라."\n\n동료. 얘기 좀.\n그 두 단어가 내 머리에서 서로 부딪혔다.\n\n나는 순간적으로 웃으려고 했다.\n별일 아니니까. 사소하니까.\n사람은 그럴 수 있으니까.\n\n그런데 그가 이어서 말했다.\n"아, 근데 너 메시지 못 봤어. 폰 무음이었어."', buttons: [{ label: 'Q', type: 'puzzle' }] }
     ],
     puzzle: { type: 'image', image: '/문제7.png', answer: 'BREAK', answer2: 'break' },
     hint: '어긋나버린 것을 찾아보자… 뒤틀려버린...',
@@ -777,7 +782,7 @@ const GAME_DATA = {
       { text: '그는 내 얼굴을 보며 말했다.\n"화났어?"\n그 질문이 더 얄밉게 들렸다.\n왜냐하면 그 질문에는\n내가 \'화났다고 말하면\'\n내가 이상해지는 구조가 숨어 있었으니까.\n\n"아니."\n나는 말했다.\n"그냥 좀 피곤해."', buttons: [{ label: '다음', type: 'next' }] },
       { text: '거짓말이었다.\n피곤한 건 사실이었지만\n그 피곤의 이유는\n내 마음이 또다시\n\'믿었다가 다칠까 봐\' 바짝 긴장했기 때문이었다.\n\n나는 예전의 내가 생각났다.\n기다리는 동안\n상대의 마음을 추측하고,\n추측하는 동안\n혼자 무너지고,\n무너진 뒤엔\n상대를 밀어내버리는 나.\n\n\'또 시작이네.\'\n내가 나에게 말하는 소리가 들렸다.', buttons: [{ label: 'Q', type: 'puzzle' }] }
     ],
-    puzzle: { type: 'pyramid', answer: '의심', answer2: '불신' },
+    puzzle: { type: 'pyramid', answer: '의심', answer2: '불신', puzzlePrompt: '깨질것 같아...' },
     hint: '흔들리면 전부 무너지는게 무엇일까? 흔들어보자.',
     answerExplain: '정답: 의심\n해석: 믿음이 흔들리면 의심이라는 글자가 나옵니다.'
   },
@@ -799,7 +804,7 @@ const GAME_DATA = {
       { text: '며칠 동안 나는 연락을 줄였다.\n답장을 늦게 했고,\n만나자는 말에 바쁘다고 했고,\n마음은 계속 무거웠다.\n\n그는 계속 붙잡았다.\n하지만 붙잡는 방식이 부담스럽지 않게\n조심스러웠다.\n\n"오늘도 힘들었어?"\n"내가 불편하게 했지."\n"말해주면 고칠게."', buttons: [{ label: '다음', type: 'next' }] },
       { text: '그 문장들이\n나를 더 아프게 했다.\n왜냐하면 그는 나쁜 사람이 아니었고\n나는 그걸 알고 있었기 때문이다.\n\n나쁜 사람이면 편했을지도 모른다.\n미워할 수 있으니까.\n끊어낼 수 있으니까.\n\n그런데 그는 좋은 사람이었다.\n그래서 나는 더 오래 망설였다.', buttons: [{ label: 'Q', type: 'puzzle' }] }
     ],
-    puzzle: { type: 'image', image: '/문제10.png', answer: '고민', answer2: '갈등' },
+    puzzle: { type: 'image', image: '/문제10.png', answer: '고민', answer2: '갈등', puzzlePrompt: '의미하는 것' },
     hint: '잘못된 글자가 보이나요?',
     answerExplain: '정답: 고민 또는 갈등\n해석: 일기장을 읽어보면 앞뒤 순서가 바뀐 것들이 있습니다. 이렇게 바뀌어져있는 글자들을 찾아 순서대로 읽으면 됩니다.'
   },
@@ -840,8 +845,17 @@ const GAME_DATA = {
   }
 };
 
+// ==================== Google Apps Script URL ====================
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzCxmWyJ8HlzcGdF2FGBLKd41wwnAJiMi0diKZxWEidTQP4Eo15_Iy4lh-SsbOywRN6bQ/exec'; // TODO: Apps Script 배포 후 URL 입력
+
 // ==================== 메인 게임 컴포넌트 ====================
 export default function LoveEscapeGame() {
+  // 토큰 인증 상태
+  const [tokenVerified, setTokenVerified] = useState(false);
+  const [tokenInput, setTokenInput] = useState('');
+  const [tokenError, setTokenError] = useState('');
+  const [tokenLoading, setTokenLoading] = useState(false);
+
   const [gamePhase, setGamePhase] = useState('INTRO'); // INTRO, PLAYING, OUTRO, RESULT
   const [currentChapter, setCurrentChapter] = useState('CH1');
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
@@ -854,6 +868,31 @@ export default function LoveEscapeGame() {
   const [reachedEndingAt, setReachedEndingAt] = useState(null);
   const [showHintConfirm, setShowHintConfirm] = useState(false);
   const timerRef = useRef(null);
+
+  // 토큰 인증 함수
+  const verifyToken = async () => {
+    const token = tokenInput.trim();
+    if (!token) {
+      setTokenError('토큰을 입력해주세요.');
+      return;
+    }
+    setTokenLoading(true);
+    setTokenError('');
+    try {
+      const response = await fetch(`${APPS_SCRIPT_URL}?token=${encodeURIComponent(token)}`);
+      const data = await response.json();
+      if (data.valid) {
+        setTokenVerified(true);
+        setTokenError('');
+      } else {
+        setTokenError(data.message || '유효하지 않은 토큰입니다.');
+      }
+    } catch {
+      setTokenError('서버 연결에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setTokenLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (gamePhase === 'PLAYING') {
@@ -1085,20 +1124,24 @@ export default function LoveEscapeGame() {
     const chapterData = GAME_DATA[currentChapter];
     const puzzle = chapterData.puzzle;
 
+    const promptEl = puzzle.puzzlePrompt ? (
+      <p className="text-lg sm:text-xl text-neutral-100 font-medium mb-4 text-center">"{puzzle.puzzlePrompt}"</p>
+    ) : null;
+
     if (puzzle.type === 'pyramid') {
-      return <PyramidCollapsePuzzle onAnswer={handlePuzzleSolved} />;
+      return <>{promptEl}<PyramidCollapsePuzzle onAnswer={handlePuzzleSolved} /></>;
     }
 
     if (puzzle.type === 'blockStack') {
-      return <BlockStackGame onSolved={handlePuzzleSolved} onFail={null} debug={false} />;
+      return <>{promptEl}<BlockStackGame onSolved={handlePuzzleSolved} onFail={null} debug={false} /></>;
     }
 
     if (puzzle.type === 'dualButton') {
-      return <DualButtonPuzzle onSolved={handlePuzzleSolved} />;
+      return <>{promptEl}<DualButtonPuzzle onSolved={handlePuzzleSolved} /></>;
     }
 
     if (puzzle.type === 'wait') {
-      return <WaitPuzzle waitTime={puzzle.waitTime} onSolved={handlePuzzleSolved} />;
+      return <>{promptEl}<WaitPuzzle waitTime={puzzle.waitTime} onSolved={handlePuzzleSolved} /></>;
     }
 
     if (puzzle.type === 'video') {
@@ -1114,28 +1157,24 @@ export default function LoveEscapeGame() {
         }
       };
 
-      const youtubeUrl = `https://www.youtube.com/watch?v=${puzzle.videoId}`;
+      const embedUrl = `https://www.youtube.com/embed/${puzzle.videoId}?autoplay=1&loop=1&playlist=${puzzle.videoId}&mute=1&playsinline=1&controls=1&rel=0`;
 
       return (
         <div className="text-center py-4 sm:py-8 w-full">
-          <div className="w-full max-w-xl mx-auto mb-4 sm:mb-6 aspect-video bg-neutral-800 border-2 border-neutral-700 rounded-lg overflow-hidden relative"
-               style={{ paddingBottom: '56.25%', height: 0 }}>
+          {promptEl}
+          <div
+            className="w-full max-w-xl mx-auto mb-4 sm:mb-6 bg-neutral-800 border-2 border-neutral-700 rounded-lg overflow-hidden relative"
+            style={{ paddingBottom: '56.25%', height: 0 }}
+          >
             <iframe
-              src={`https://www.youtube.com/embed/${puzzle.videoId}?autoplay=1&loop=1&playlist=${puzzle.videoId}&mute=1&playsinline=1&rel=0&enablejsapi=1`}
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              src={embedUrl}
+              title="퍼즐 영상"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
             />
           </div>
-          <a
-            href={youtubeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block mb-4 text-sm text-neutral-400 underline hover:text-neutral-200"
-          >
-            영상이 재생되지 않으면 여기를 눌러주세요
-          </a>
+          <p className="text-sm text-neutral-400 mb-4">영상을 보고 정답을 입력하세요</p>
           <div className="flex gap-2 items-center justify-center px-2">
             <input
               type="text"
@@ -1171,6 +1210,7 @@ export default function LoveEscapeGame() {
 
     return (
       <div className="text-center py-4 sm:py-8 w-full">
+        {promptEl}
         {puzzle.image && (
           <div className="w-full max-w-xs sm:max-w-sm mx-auto mb-4 sm:mb-6 aspect-square bg-neutral-800 border-2 border-neutral-700 rounded-lg overflow-hidden">
             <img src={puzzle.image} alt="Puzzle" className="w-full h-full object-contain" />
@@ -1279,12 +1319,47 @@ export default function LoveEscapeGame() {
     );
   };
 
+  const renderTokenGate = () => (
+    <div className="min-h-screen flex items-center justify-center p-8">
+      <div className="text-center max-w-md">
+        <Heart className="w-16 h-16 mx-auto mb-6 text-red-400" />
+        <h1 className="text-4xl font-bold text-neutral-100 mb-4">연애의 문제</h1>
+        <p className="text-neutral-400 mb-8">게임에 접속하려면 토큰을 입력하세요.</p>
+        <div className="flex flex-col gap-4">
+          <input
+            type="text"
+            value={tokenInput}
+            onChange={(e) => {
+              setTokenInput(e.target.value);
+              setTokenError('');
+            }}
+            onKeyPress={(e) => e.key === 'Enter' && verifyToken()}
+            placeholder="토큰 입력"
+            className="px-6 py-3 text-lg bg-neutral-800 border-2 border-neutral-600 rounded-lg text-neutral-100 outline-none focus:border-neutral-500 text-center"
+            disabled={tokenLoading}
+          />
+          {tokenError && (
+            <p className="text-red-400 text-sm">{tokenError}</p>
+          )}
+          <button
+            onClick={verifyToken}
+            disabled={tokenLoading}
+            className="px-8 py-3 text-lg bg-neutral-700 hover:bg-neutral-600 disabled:bg-neutral-800 disabled:text-neutral-500 rounded-lg text-neutral-100 font-medium transition-colors"
+          >
+            {tokenLoading ? '확인 중...' : '입장하기'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-neutral-950 to-neutral-900 text-neutral-100">
-      {gamePhase === 'INTRO' && renderIntro()}
-      {gamePhase === 'PLAYING' && renderPlaying()}
-      {gamePhase === 'OUTRO' && renderOutro()}
-      {gamePhase === 'RESULT' && renderResult()}
+      {!tokenVerified && renderTokenGate()}
+      {tokenVerified && gamePhase === 'INTRO' && renderIntro()}
+      {tokenVerified && gamePhase === 'PLAYING' && renderPlaying()}
+      {tokenVerified && gamePhase === 'OUTRO' && renderOutro()}
+      {tokenVerified && gamePhase === 'RESULT' && renderResult()}
     </div>
   );
 }

@@ -600,6 +600,7 @@ function YouTubePlayer({ videoId }) {
   const containerRef = useRef(null);
   const playerRef = useRef(null);
   const [needsTap, setNeedsTap] = useState(false);
+  const [embedBlocked, setEmbedBlocked] = useState(false);
 
   useEffect(() => {
     let autoplayCheckTimer = null;
@@ -639,30 +640,29 @@ function YouTubePlayer({ videoId }) {
           controls: 1,
           rel: 0,
           modestbranding: 1,
+          origin: window.location.origin,
         },
         events: {
           onReady: (e) => {
             e.target.mute();
             e.target.playVideo();
-            // 1.5초 후에도 재생 안 되면 탭 오버레이 표시
             autoplayCheckTimer = setTimeout(() => {
-              const state = e.target.getPlayerState();
-              // -1(시작안됨), 0(끝남), 2(일시정지), 5(큐) = 재생 안됨
-              if (state !== 1) {
-                setNeedsTap(true);
-              }
+              try {
+                const state = e.target.getPlayerState();
+                if (state !== 1) setNeedsTap(true);
+              } catch { setNeedsTap(true); }
             }, 1500);
           },
           onStateChange: (e) => {
-            // 재생이 시작되면 오버레이 숨기기
-            if (e.data === window.YT.PlayerState.PLAYING) {
-              setNeedsTap(false);
-            }
-            // 영상이 끝나면 다시 재생
+            if (e.data === window.YT.PlayerState.PLAYING) setNeedsTap(false);
             if (e.data === window.YT.PlayerState.ENDED) {
               e.target.seekTo(0);
               e.target.playVideo();
             }
+          },
+          onError: () => {
+            // 101, 150 = 임베딩 차단 / 100 = 영상 없음 / 5 = HTML5 에러
+            setEmbedBlocked(true);
           },
         },
       });
@@ -673,7 +673,7 @@ function YouTubePlayer({ videoId }) {
     return () => {
       if (autoplayCheckTimer) clearTimeout(autoplayCheckTimer);
       if (playerRef.current) {
-        playerRef.current.destroy();
+        try { playerRef.current.destroy(); } catch { /* ignore */ }
         playerRef.current = null;
       }
     };
@@ -681,11 +681,45 @@ function YouTubePlayer({ videoId }) {
 
   const handleTapToPlay = () => {
     if (playerRef.current) {
-      playerRef.current.mute();
-      playerRef.current.playVideo();
-      setNeedsTap(false);
+      try {
+        playerRef.current.mute();
+        playerRef.current.playVideo();
+        setNeedsTap(false);
+      } catch { setEmbedBlocked(true); }
     }
   };
+
+  // 임베딩 차단 시 YouTube 앱/브라우저에서 직접 재생
+  if (embedBlocked) {
+    return (
+      <div className="w-full max-w-xl mx-auto mb-4 sm:mb-6">
+        <a
+          href={`https://www.youtube.com/watch?v=${videoId}&loop=1`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block relative bg-neutral-800 border-2 border-neutral-700 rounded-lg overflow-hidden"
+          style={{ paddingBottom: '56.25%', height: 0 }}
+        >
+          <img
+            src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
+            alt="영상 썸네일"
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+          <div style={{
+            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0,0,0,0.5)',
+          }}>
+            <div style={{ textAlign: 'center', color: '#fff' }}>
+              <div style={{ fontSize: '48px', marginBottom: '8px' }}>▶</div>
+              <div style={{ fontSize: '14px', opacity: 0.9 }}>YouTube에서 보기</div>
+              <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '4px' }}>영상을 본 뒤 돌아와서 정답을 입력하세요</div>
+            </div>
+          </div>
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div

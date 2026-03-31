@@ -595,6 +595,89 @@ function BlockStackGame({ onSolved, onFail, debug = false }) {
   );
 }
 
+// ==================== YouTube Player (모바일 자동재생 지원) ====================
+function YouTubePlayer({ videoId }) {
+  const containerRef = useRef(null);
+  const playerRef = useRef(null);
+
+  useEffect(() => {
+    // YouTube IFrame API 로드
+    const loadAPI = () => {
+      if (window.YT && window.YT.Player) {
+        createPlayer();
+        return;
+      }
+      // 이미 스크립트가 로드 중이면 콜백만 등록
+      if (document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+        const prev = window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady = () => {
+          if (prev) prev();
+          createPlayer();
+        };
+        return;
+      }
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      window.onYouTubeIframeAPIReady = () => createPlayer();
+      document.head.appendChild(tag);
+    };
+
+    const createPlayer = () => {
+      if (!containerRef.current) return;
+      if (playerRef.current) {
+        playerRef.current.destroy();
+      }
+      playerRef.current = new window.YT.Player(containerRef.current, {
+        videoId,
+        playerVars: {
+          autoplay: 1,
+          mute: 1,
+          loop: 1,
+          playlist: videoId,
+          playsinline: 1,
+          controls: 1,
+          rel: 0,
+          modestbranding: 1,
+        },
+        events: {
+          onReady: (e) => {
+            e.target.mute();
+            e.target.playVideo();
+          },
+          onStateChange: (e) => {
+            // 영상이 끝나면 다시 재생
+            if (e.data === window.YT.PlayerState.ENDED) {
+              e.target.seekTo(0);
+              e.target.playVideo();
+            }
+          },
+        },
+      });
+    };
+
+    loadAPI();
+
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+    };
+  }, [videoId]);
+
+  return (
+    <div
+      className="w-full max-w-xl mx-auto mb-4 sm:mb-6 bg-neutral-800 border-2 border-neutral-700 rounded-lg overflow-hidden relative"
+      style={{ paddingBottom: '56.25%', height: 0 }}
+    >
+      <div
+        ref={containerRef}
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+      />
+    </div>
+  );
+}
+
 // ==================== CH1: 두 개의 문 (동시클릭) ====================
 function DualButtonPuzzle({ onSolved }) {
   const [lastClick, setLastClick] = useState({ a: 0, b: 0 });
@@ -1157,23 +1240,10 @@ export default function LoveEscapeGame() {
         }
       };
 
-      const embedUrl = `https://www.youtube.com/embed/${puzzle.videoId}?autoplay=1&loop=1&playlist=${puzzle.videoId}&mute=1&playsinline=1&controls=1&rel=0`;
-
       return (
         <div className="text-center py-4 sm:py-8 w-full">
           {promptEl}
-          <div
-            className="w-full max-w-xl mx-auto mb-4 sm:mb-6 bg-neutral-800 border-2 border-neutral-700 rounded-lg overflow-hidden relative"
-            style={{ paddingBottom: '56.25%', height: 0 }}
-          >
-            <iframe
-              src={embedUrl}
-              title="퍼즐 영상"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-            />
-          </div>
+          <YouTubePlayer videoId={puzzle.videoId} />
           <p className="text-sm text-neutral-400 mb-4">영상을 보고 정답을 입력하세요</p>
           <div className="flex gap-2 items-center justify-center px-2">
             <input

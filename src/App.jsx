@@ -599,15 +599,16 @@ function BlockStackGame({ onSolved, onFail, debug = false }) {
 function YouTubePlayer({ videoId }) {
   const containerRef = useRef(null);
   const playerRef = useRef(null);
+  const [needsTap, setNeedsTap] = useState(false);
 
   useEffect(() => {
-    // YouTube IFrame API 로드
+    let autoplayCheckTimer = null;
+
     const loadAPI = () => {
       if (window.YT && window.YT.Player) {
         createPlayer();
         return;
       }
-      // 이미 스크립트가 로드 중이면 콜백만 등록
       if (document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
         const prev = window.onYouTubeIframeAPIReady;
         window.onYouTubeIframeAPIReady = () => {
@@ -643,8 +644,20 @@ function YouTubePlayer({ videoId }) {
           onReady: (e) => {
             e.target.mute();
             e.target.playVideo();
+            // 1.5초 후에도 재생 안 되면 탭 오버레이 표시
+            autoplayCheckTimer = setTimeout(() => {
+              const state = e.target.getPlayerState();
+              // -1(시작안됨), 0(끝남), 2(일시정지), 5(큐) = 재생 안됨
+              if (state !== 1) {
+                setNeedsTap(true);
+              }
+            }, 1500);
           },
           onStateChange: (e) => {
+            // 재생이 시작되면 오버레이 숨기기
+            if (e.data === window.YT.PlayerState.PLAYING) {
+              setNeedsTap(false);
+            }
             // 영상이 끝나면 다시 재생
             if (e.data === window.YT.PlayerState.ENDED) {
               e.target.seekTo(0);
@@ -658,12 +671,21 @@ function YouTubePlayer({ videoId }) {
     loadAPI();
 
     return () => {
+      if (autoplayCheckTimer) clearTimeout(autoplayCheckTimer);
       if (playerRef.current) {
         playerRef.current.destroy();
         playerRef.current = null;
       }
     };
   }, [videoId]);
+
+  const handleTapToPlay = () => {
+    if (playerRef.current) {
+      playerRef.current.mute();
+      playerRef.current.playVideo();
+      setNeedsTap(false);
+    }
+  };
 
   return (
     <div
@@ -674,6 +696,21 @@ function YouTubePlayer({ videoId }) {
         ref={containerRef}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
       />
+      {needsTap && (
+        <button
+          onClick={handleTapToPlay}
+          style={{
+            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0,0,0,0.6)', border: 'none', cursor: 'pointer', zIndex: 10,
+          }}
+        >
+          <div style={{ textAlign: 'center', color: '#fff' }}>
+            <div style={{ fontSize: '48px', marginBottom: '8px' }}>▶</div>
+            <div style={{ fontSize: '14px', opacity: 0.9 }}>터치하여 재생</div>
+          </div>
+        </button>
+      )}
     </div>
   );
 }

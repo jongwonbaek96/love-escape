@@ -595,160 +595,6 @@ function BlockStackGame({ onSolved, onFail, debug = false }) {
   );
 }
 
-// ==================== YouTube Player (모바일 자동재생 지원) ====================
-function YouTubePlayer({ videoId }) {
-  const containerRef = useRef(null);
-  const playerRef = useRef(null);
-  const [needsTap, setNeedsTap] = useState(false);
-  const [embedBlocked, setEmbedBlocked] = useState(false);
-
-  useEffect(() => {
-    let autoplayCheckTimer = null;
-
-    const loadAPI = () => {
-      if (window.YT && window.YT.Player) {
-        createPlayer();
-        return;
-      }
-      if (document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
-        const prev = window.onYouTubeIframeAPIReady;
-        window.onYouTubeIframeAPIReady = () => {
-          if (prev) prev();
-          createPlayer();
-        };
-        return;
-      }
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      window.onYouTubeIframeAPIReady = () => createPlayer();
-      document.head.appendChild(tag);
-    };
-
-    const createPlayer = () => {
-      if (!containerRef.current) return;
-      if (playerRef.current) {
-        playerRef.current.destroy();
-      }
-      playerRef.current = new window.YT.Player(containerRef.current, {
-        videoId,
-        playerVars: {
-          autoplay: 1,
-          mute: 1,
-          loop: 1,
-          playlist: videoId,
-          playsinline: 1,
-          controls: 1,
-          rel: 0,
-          modestbranding: 1,
-          origin: window.location.origin,
-        },
-        events: {
-          onReady: (e) => {
-            e.target.mute();
-            e.target.playVideo();
-            autoplayCheckTimer = setTimeout(() => {
-              try {
-                const state = e.target.getPlayerState();
-                if (state !== 1) setNeedsTap(true);
-              } catch { setNeedsTap(true); }
-            }, 1500);
-          },
-          onStateChange: (e) => {
-            if (e.data === window.YT.PlayerState.PLAYING) setNeedsTap(false);
-            if (e.data === window.YT.PlayerState.ENDED) {
-              e.target.seekTo(0);
-              e.target.playVideo();
-            }
-          },
-          onError: () => {
-            // 101, 150 = 임베딩 차단 / 100 = 영상 없음 / 5 = HTML5 에러
-            setEmbedBlocked(true);
-          },
-        },
-      });
-    };
-
-    loadAPI();
-
-    return () => {
-      if (autoplayCheckTimer) clearTimeout(autoplayCheckTimer);
-      if (playerRef.current) {
-        try { playerRef.current.destroy(); } catch { /* ignore */ }
-        playerRef.current = null;
-      }
-    };
-  }, [videoId]);
-
-  const handleTapToPlay = () => {
-    if (playerRef.current) {
-      try {
-        playerRef.current.mute();
-        playerRef.current.playVideo();
-        setNeedsTap(false);
-      } catch { setEmbedBlocked(true); }
-    }
-  };
-
-  // 임베딩 차단 시 YouTube 앱/브라우저에서 직접 재생
-  if (embedBlocked) {
-    return (
-      <div className="w-full max-w-xl mx-auto mb-4 sm:mb-6">
-        <a
-          href={`https://www.youtube.com/watch?v=${videoId}&loop=1`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block relative bg-neutral-800 border-2 border-neutral-700 rounded-lg overflow-hidden"
-          style={{ paddingBottom: '56.25%', height: 0 }}
-        >
-          <img
-            src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
-            alt="영상 썸네일"
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-          <div style={{
-            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(0,0,0,0.5)',
-          }}>
-            <div style={{ textAlign: 'center', color: '#fff' }}>
-              <div style={{ fontSize: '48px', marginBottom: '8px' }}>▶</div>
-              <div style={{ fontSize: '14px', opacity: 0.9 }}>YouTube에서 보기</div>
-              <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '4px' }}>영상을 본 뒤 돌아와서 정답을 입력하세요</div>
-            </div>
-          </div>
-        </a>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="w-full max-w-xl mx-auto mb-4 sm:mb-6 bg-neutral-800 border-2 border-neutral-700 rounded-lg overflow-hidden relative"
-      style={{ paddingBottom: '56.25%', height: 0 }}
-    >
-      <div
-        ref={containerRef}
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-      />
-      {needsTap && (
-        <button
-          onClick={handleTapToPlay}
-          style={{
-            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(0,0,0,0.6)', border: 'none', cursor: 'pointer', zIndex: 10,
-          }}
-        >
-          <div style={{ textAlign: 'center', color: '#fff' }}>
-            <div style={{ fontSize: '48px', marginBottom: '8px' }}>▶</div>
-            <div style={{ fontSize: '14px', opacity: 0.9 }}>터치하여 재생</div>
-          </div>
-        </button>
-      )}
-    </div>
-  );
-}
-
 // ==================== CH1: 두 개의 문 (동시클릭) ====================
 function DualButtonPuzzle({ onSolved }) {
   const [lastClick, setLastClick] = useState({ a: 0, b: 0 });
@@ -1300,10 +1146,9 @@ export default function LoveEscapeGame() {
 
     if (puzzle.type === 'video') {
       const handleVideoSubmit = () => {
-        const normalized = tempInput.trim().toLowerCase().replace(/\s/g, '');
-        const ans1 = puzzle.answer.toLowerCase();
-        const ans2 = puzzle.answer2?.toLowerCase();
-        if (normalized === ans1 || normalized === ans2) {
+        const normalized = tempInput.trim().toLowerCase();
+        if (normalized === puzzle.answer.toLowerCase() ||
+            normalized === puzzle.answer2?.toLowerCase()) {
           handlePuzzleSolved();
           setTempInput('');
         } else {
@@ -1312,11 +1157,19 @@ export default function LoveEscapeGame() {
       };
 
       return (
-        <div className="text-center py-4 sm:py-8 w-full">
+        <div className="text-center py-4 w-full">
           {promptEl}
-          <YouTubePlayer videoId={puzzle.videoId} />
+          <div className="w-full max-w-xl mx-auto mb-4 rounded-lg overflow-hidden"
+            style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+            <iframe
+              src={`https://www.youtube.com/embed/${puzzle.videoId}?playsinline=1`}
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
           <p className="text-sm text-neutral-400 mb-4">영상을 보고 정답을 입력하세요</p>
-          <div className="flex gap-2 items-center justify-center px-2">
+          <div className="flex gap-2 items-center justify-center px-2 mt-4">
             <input
               type="text"
               value={tempInput}
@@ -1327,7 +1180,7 @@ export default function LoveEscapeGame() {
             />
             <button
               onClick={handleVideoSubmit}
-              className="px-4 sm:px-6 py-2 bg-neutral-700 hover:bg-neutral-600 rounded text-neutral-100 font-medium whitespace-nowrap"
+              className="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 rounded text-neutral-100 font-medium"
             >
               Enter
             </button>

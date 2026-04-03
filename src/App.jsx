@@ -297,6 +297,7 @@ function BlockStackGame({ onSolved, onFail, debug = false }) {
   const [gameState, setGameState] = useState('WAITING');
   const [message, setMessage] = useState('블록 1/6 - 클릭하여 떨어뜨리기');
   const [droppedCount, setDroppedCount] = useState(0);
+  const [failCount, setFailCount] = useState(0);
 
   const CANVAS_WIDTH = 400;
   const CANVAS_HEIGHT = 500;
@@ -357,6 +358,11 @@ function BlockStackGame({ onSolved, onFail, debug = false }) {
       clearInterval(successCheckIntervalRef.current);
       successCheckIntervalRef.current = null;
     }
+    setFailCount(prev => {
+      const next = prev + 1;
+      if (next >= 100) setTimeout(() => onSolved(), 500);
+      return next;
+    });
     if (onFail) onFail();
   };
 
@@ -588,9 +594,11 @@ function BlockStackGame({ onSolved, onFail, debug = false }) {
           다시 시작
         </button>
       )}
-      <p className="text-xs text-neutral-500 text-center max-w-md px-2">
-        1번(노란색) 블록만 바닥에 닿을 수 있습니다. 2~6번 블록이 바닥에 닿으면 실패!
-      </p>
+      {failCount >= 50 && failCount < 100 && (
+        <p className="text-xs text-yellow-400 text-center">
+          {100 - failCount}번 더 도전하면 다음으로 넘어갈 수 있습니다.
+        </p>
+      )}
     </div>
   );
 }
@@ -668,7 +676,7 @@ function WaitPuzzle({ waitTime, onSolved }) {
   const choices = [
     { key: 'A', text: '힘들었어요?' },
     { key: 'B', text: '괜찮아요?' },
-    { key: 'C', text: '(말 없이 지그시 바라본다.)' }
+    { key: 'C', text: '웃는 모습이 제일 이뻐요. 같이 웃어봐요' }
   ];
 
   return (
@@ -783,8 +791,8 @@ const GAME_DATA = {
       { text: '거짓말이었다.\n피곤한 건 사실이었지만\n그 피곤의 이유는\n내 마음이 또다시\n\'믿었다가 다칠까 봐\' 바짝 긴장했기 때문이었다.\n\n나는 예전의 내가 생각났다.\n기다리는 동안\n상대의 마음을 추측하고,\n추측하는 동안\n혼자 무너지고,\n무너진 뒤엔\n상대를 밀어내버리는 나.\n\n\'또 시작이네.\'\n내가 나에게 말하는 소리가 들렸다.', buttons: [{ label: 'Q', type: 'puzzle' }] }
     ],
     puzzle: { type: 'pyramid', answer: '의심', answer2: '불신', puzzlePrompt: '깨질것 같아...' },
-    hint: '흔들리면 전부 무너지는게 무엇일까? 흔들어보자.',
-    answerExplain: '정답: 의심\n해석: 믿음이 흔들리면 의심이라는 글자가 나옵니다.'
+    hint: '흔들리면 무너지는 것이 무엇일까.. 클릭해서 흔들어보자',
+    answerExplain: '정답: 의심\n해석: 믿음을 눌러 흔들면 의심이라는 글자가 나옵니다.'
   },
 
   CH9: {
@@ -795,7 +803,7 @@ const GAME_DATA = {
     ],
     puzzle: { type: 'image', image: '/문제9.png', answer: '싫어졌나', answer2: '싫어졌나요' },
     hint: '잘못된 글자가 보이나요?',
-    answerExplain: '정답: 싫어졌나\n해석: 일기장을 읽어보면 앞뒤 순서가 바뀐 것들이 있습니다. 이렇게 바뀌어져있는 글자들을 찾아 순서대로 읽으면 됩니다.'
+    answerExplain: '정답: 싫어졌나\n해석: 일기장을 읽어보면 앞뒤 순서가 바뀐 것들이 있습니다.\n이렇게 바뀌어져있는 글자들을 오른쪽위의 숫자에 맞게 읽으면 됩니다.'
   },
 
   CH10: {
@@ -816,8 +824,8 @@ const GAME_DATA = {
       { text: '나는 그를 사랑했다.\n그건 확실했다.\n하지만 믿음은 사랑만으로 생기지 않았다.\n\n믿음은\n\'실수\'가 아니라\n\'실수 이후의 태도\'를 계속 보고 쌓이는 것이었다.\n\n그가 변할 수 있을까.\n아니면 이건 잠깐의 다짐일까.\n\n그리고 더 중요한 질문이 있었다.\n나는 다시 믿을 수 있을까.\n아니면 나는\n어떤 실수 앞에서도\n언젠가 또 이렇게 무너질까.', buttons: [{ label: 'Q', type: 'puzzle' }] }
     ],
     puzzle: { type: 'blockStack' },
-    hint: '1번(노란색) 블록만 바닥에 닿을 수 있습니다. 나머지 블록이 바닥에 닿으면 실패!',
-    answerExplain: '블록을 신중하게 쌓으세요. 균형이 무너지지 않도록.'
+    hint: '1번 블록만 바닥에 낳을 수 있습니다. 나머지 블록이 바닥에 닿으면 실패\n믿음을 다시 쌓는건 쉽지 않습니다.',
+    answerExplain: '블록을 신중하게 쌓으세요. 균형이 무너지지 않도록. 포기하지 마세요.'
   },
 
   CH12: {
@@ -868,6 +876,38 @@ export default function LoveEscapeGame() {
   const [reachedEndingAt, setReachedEndingAt] = useState(null);
   const [showHintConfirm, setShowHintConfirm] = useState(false);
   const timerRef = useRef(null);
+  const bgmRef = useRef(null);
+
+  // BGM 구간 계산
+  const getBgmTrack = () => {
+    if (gamePhase === 'INTRO') return '/BGM/인트로.mp3';
+    if (gamePhase === 'PLAYING') {
+      const introChapters = ['CH1', 'CH2', 'CH3'];
+      const loveChapters = ['CH4', 'CH5', 'CH6'];
+      if (introChapters.includes(currentChapter)) return '/BGM/인트로.mp3';
+      if (loveChapters.includes(currentChapter)) return '/BGM/사랑.mp3';
+      return '/BGM/이별.mp3';
+    }
+    return '/BGM/이별.mp3'; // OUTRO, RESULT
+  };
+
+  // BGM 변경 처리
+  useEffect(() => {
+    const track = getBgmTrack();
+    if (!bgmRef.current) {
+      bgmRef.current = new Audio(track);
+      bgmRef.current.loop = true;
+      bgmRef.current.volume = 0.4;
+      bgmRef.current.play().catch(() => {});
+    } else if (bgmRef.current.src !== window.location.origin + track) {
+      bgmRef.current.pause();
+      bgmRef.current.src = track;
+      bgmRef.current.loop = true;
+      bgmRef.current.volume = 0.4;
+      bgmRef.current.play().catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gamePhase, currentChapter]);
 
   // 토큰 인증 함수
   const verifyToken = async () => {
@@ -941,7 +981,7 @@ export default function LoveEscapeGame() {
       <div className="text-center max-w-2xl">
         <Heart className="w-16 h-16 mx-auto mb-8 text-red-400" />
         <h1 className="text-5xl font-bold text-neutral-100 mb-8">사랑이란</h1>
-        <div className="flex items-center justify-center gap-4 mb-12">
+        <div className="flex items-center justify-center gap-4 mb-4">
           <input
             type="text"
             value={tempInput}
@@ -952,6 +992,10 @@ export default function LoveEscapeGame() {
           />
           <span className="text-2xl text-neutral-100">다.</span>
         </div>
+        <p className="text-neutral-500 text-sm mb-8">
+          (여러분이 생각하는 사랑을 적어주세요.<br />
+          예시 : 사랑은 모든걸 이긴다.)
+        </p>
         <button
           onClick={handleIntroSubmit}
           className="px-8 py-3 text-lg bg-neutral-700 hover:bg-neutral-600 rounded-lg text-neutral-100 font-medium transition-colors"
